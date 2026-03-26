@@ -1,19 +1,55 @@
-/.phpunit.cache
+# ===============================
+# Laravel Core
+# ===============================
+/vendor
 /node_modules
 /public/build
 /public/hot
-/public/storage
+
+# ===============================
+# Storage & Cache
+# ===============================
 /storage/*.key
-/vendor
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+
+# ===============================
+# Environment (WAJIB PRIVATE)
+# ===============================
 .env
-.env.backup
-.env.production
+.env.*
+!.env.example
+
+# ===============================
+# Testing
+# ===============================
+.phpunit.cache
 .phpunit.result.cache
-Homestead.json
-Homestead.yaml
-auth.json
+
+# ===============================
+# Logs
+# ===============================
 npm-debug.log
 yarn-error.log
-/.fleet
-/.idea
+
+# ===============================
+# IDE & Editor
+# ===============================
 /.vscode
+/.idea
+/.fleet
+
+# ===============================
+# OS Files
+# ===============================
+.DS_Store
+Thumbs.db
+
+# ===============================
+# Misc
+# ===============================
+auth.json
+Homestead.json
+Homestead.yaml
