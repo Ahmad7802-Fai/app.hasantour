@@ -1,4 +1,6 @@
 /* CORE */
+/* Importing Bootstrap first to ensure our custom variables and mixins can override Bootstrap's defaults. */
+
 @import "../../node_modules/bootstrap/scss/bootstrap";
 @import "variables";
 @import "mixins";
