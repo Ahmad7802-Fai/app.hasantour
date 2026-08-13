@@ -2,10 +2,11 @@
 
 namespace App\Services\Paket;
 
-use App\Models\PaketUmrah;
-use App\Models\PaketMaster;
 use App\Models\Keberangkatan;
+use App\Models\PaketMaster;
+use App\Models\PaketUmrah;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class PaketUmrahUpdateService
 {
@@ -14,32 +15,54 @@ class PaketUmrahUpdateService
         return DB::transaction(function () use ($paket, $data) {
 
             /**
-             * 1️⃣ UPDATE PAKET UMRAH (CONTENT)
+             * 1. Resolve dependencies using the old title before
+             * PaketUmrah itself is changed.
+             */
+            $oldTitle = $paket->title;
+
+            $paketMaster = PaketMaster::where('nama_paket', $oldTitle)->first();
+
+            if (! $paketMaster) {
+                throw new RuntimeException(
+                    "PaketMaster untuk paket '{$oldTitle}' tidak ditemukan."
+                );
+            }
+
+            $activeDepartureIds = Keberangkatan::where(
+                'id_paket_master',
+                $paketMaster->id
+            )
+                ->where('status', 'Aktif')
+                ->pluck('id');
+
+            if ($activeDepartureIds->isEmpty()) {
+                throw new RuntimeException(
+                    "Keberangkatan aktif untuk PaketMaster ID {$paketMaster->id} tidak ditemukan."
+                );
+            }
+
+            /**
+             * 2. Update Paket Umrah content.
              */
             $paket->update($data);
 
             /**
-             * 2️⃣ UPDATE PAKET MASTER
+             * 3. Sync Paket Master.
              */
-            $paketMaster = PaketMaster::where('nama_paket', $paket->title)->first();
-
-            if ($paketMaster) {
-                $paketMaster->update([
-                    'nama_paket'    => $data['title'],
-                    'pesawat'       => $data['pesawat'],
-                    'hotel_mekkah'  => $data['hotmekkah'],
-                    'hotel_madinah' => $data['hotmadinah'],
-                    'harga_quad'    => $data['quad'],
-                    'harga_triple'  => $data['triple'],
-                    'harga_double'  => $data['double'],
-                ]);
-            }
+            $paketMaster->update([
+                'nama_paket'    => $data['title'],
+                'pesawat'       => $data['pesawat'],
+                'hotel_mekkah'  => $data['hotmekkah'],
+                'hotel_madinah' => $data['hotmadinah'],
+                'harga_quad'    => $data['quad'],
+                'harga_triple'  => $data['triple'],
+                'harga_double'  => $data['double'],
+            ]);
 
             /**
-             * 3️⃣ UPDATE KEBERANGKATAN
+             * 4. Sync every active departure belonging to the master.
              */
-            Keberangkatan::where('id_paket_master', $paketMaster->id ?? null)
-                ->where('status', 'Aktif')
+            Keberangkatan::whereIn('id', $activeDepartureIds)
                 ->update([
                     'tanggal_berangkat' => $data['tglberangkat'],
                     'tanggal_pulang'    => now()
