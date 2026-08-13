@@ -2,7 +2,6 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Cache;
 use App\Helpers\ApiHelper;
 
 /*
@@ -19,31 +18,26 @@ Route::prefix("v1")->group(function () {
     Route::get('/berita', function () {
 
         $limit = ApiHelper::limit();
-        $page  = ApiHelper::page();
-        $search = request()->search;
         $kategori = request()->kategori;
 
-        $key = "berita_{$limit}_{$page}_{$search}_{$kategori}";
+        $query = \App\Models\Berita::query();
 
-        return Cache::remember($key, 300, function () use ($limit, $kategori) {
+        // Search
+        $query = ApiHelper::search($query, ['judul', 'konten']);
 
-            $query = \App\Models\Berita::query();
+        // Filter kategori
+        if ($kategori) {
+            $query->where('kategori', $kategori);
+        }
 
-            // Search
-            $query = ApiHelper::search($query, ['judul', 'konten']);
+        $data = $query->latest()->paginate($limit);
 
-            // Filter kategori
-            if ($kategori) $query->where('kategori', $kategori);
-
-            $data = $query->latest()->paginate($limit);
-
-            return [
-                'success' => true,
-                'page'    => $data->currentPage(),
-                'total'   => $data->total(),
-                'data'    => $data->items()
-            ];
-        });
+        return [
+            'success' => true,
+            'page'    => $data->currentPage(),
+            'total'   => $data->total(),
+            'data'    => $data->items(),
+        ];
     });
 
 
@@ -53,33 +47,32 @@ Route::prefix("v1")->group(function () {
     Route::get('/paket-umrah', function () {
 
         $limit = ApiHelper::limit();
-        $page  = ApiHelper::page();
 
         $min = request()->min_price;
         $max = request()->max_price;
 
-        $key = "paket_{$limit}_{$page}_{$min}_{$max}";
+        $query = \App\Models\PaketUmrah::where('is_active', 1);
 
-        return Cache::remember($key, 300, function () use ($limit, $min, $max) {
+        // Search
+        $query = ApiHelper::search($query, ['nama_paket', 'slug']);
 
-            $query = \App\Models\PaketUmrah::where('is_active', 1);
+        // Filter price range
+        if ($min) {
+            $query->where('harga', '>=', $min);
+        }
 
-            // Search
-            $query = ApiHelper::search($query, ['nama_paket', 'slug']);
+        if ($max) {
+            $query->where('harga', '<=', $max);
+        }
 
-            // Filter price range
-            if ($min) $query->where('harga', '>=', $min);
-            if ($max) $query->where('harga', '<=', $max);
+        $data = $query->latest()->paginate($limit);
 
-            $data = $query->latest()->paginate($limit);
-
-            return [
-                'success' => true,
-                'page'    => $data->currentPage(),
-                'total'   => $data->total(),
-                'data'    => $data->items()
-            ];
-        });
+        return [
+            'success' => true,
+            'page'    => $data->currentPage(),
+            'total'   => $data->total(),
+            'data'    => $data->items(),
+        ];
     });
 
 
@@ -89,28 +82,20 @@ Route::prefix("v1")->group(function () {
     Route::get('/gallery', function () {
 
         $limit = ApiHelper::limit();
-        $page  = ApiHelper::page();
 
-        $search = request()->search;
+        $query = \App\Models\Gallery::query();
 
-        $key = "gallery_{$limit}_{$page}_{$search}";
+        // Search caption
+        $query = ApiHelper::search($query, ['caption']);
 
-        return Cache::remember($key, 300, function () use ($limit) {
+        $data = $query->latest()->paginate($limit);
 
-            $query = \App\Models\Gallery::query();
-
-            // Search caption
-            $query = ApiHelper::search($query, ['caption']);
-
-            $data = $query->latest()->paginate($limit);
-
-            return [
-                'success' => true,
-                'page'    => $data->currentPage(),
-                'total'   => $data->total(),
-                'data'    => $data->items()
-            ];
-        });
+        return [
+            'success' => true,
+            'page'    => $data->currentPage(),
+            'total'   => $data->total(),
+            'data'    => $data->items(),
+        ];
     });
 
 
@@ -120,28 +105,20 @@ Route::prefix("v1")->group(function () {
     Route::get('/team', function () {
 
         $limit = ApiHelper::limit();
-        $page  = ApiHelper::page();
 
-        $search = request()->search;
+        $query = \App\Models\Team::query();
 
-        $key = "team_{$limit}_{$page}_{$search}";
+        // Search by nama or jabatan
+        $query = ApiHelper::search($query, ['nama', 'jabatan']);
 
-        return Cache::remember($key, 300, function () use ($limit) {
+        $data = $query->paginate($limit);
 
-            $query = \App\Models\Team::query();
-
-            // Search by nama or jabatan
-            $query = ApiHelper::search($query, ['nama', 'jabatan']);
-
-            $data = $query->paginate($limit);
-
-            return [
-                'success' => true,
-                'page'    => $data->currentPage(),
-                'total'   => $data->total(),
-                'data'    => $data->items()
-            ];
-        });
+        return [
+            'success' => true,
+            'page'    => $data->currentPage(),
+            'total'   => $data->total(),
+            'data'    => $data->items(),
+        ];
     });
 
 
@@ -151,31 +128,24 @@ Route::prefix("v1")->group(function () {
     Route::get('/testimoni', function () {
 
         $limit = ApiHelper::limit();
-        $page  = ApiHelper::page();
 
-        $search = request()->search;
+        $query = \App\Models\Testimoni::query();
 
-        $key = "testimoni_{$limit}_{$page}_{$search}";
+        // Search by nama
+        $query = ApiHelper::search($query, ['nama', 'pesan']);
 
-        return Cache::remember($key, 300, function () use ($limit) {
+        $data = $query->latest()->paginate($limit);
 
-            $query = \App\Models\Testimoni::query();
-
-            // Search by nama
-            $query = ApiHelper::search($query, ['nama', 'pesan']);
-
-            $data = $query->latest()->paginate($limit);
-
-            return [
-                'success' => true,
-                'page'    => $data->currentPage(),
-                'total'   => $data->total(),
-                'data'    => $data->items()
-            ];
-        });
+        return [
+            'success' => true,
+            'page'    => $data->currentPage(),
+            'total'   => $data->total(),
+            'data'    => $data->items(),
+        ];
     });
 
 });
+
 // routes/api.php
 Route::get('clients/search', function (Request $request) {
 
